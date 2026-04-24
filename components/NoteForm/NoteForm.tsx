@@ -2,10 +2,10 @@
  
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useNoteStore } from "@/lib/store/noteStore";
-import { createNote } from "@/lib/api";
-import type { CreateNoteData } from "@/types/note";
+import { createNote } from "@/lib/api/clientApi";
+import type { CreateNoteData, NoteTag } from "@/types/note";
 import css from "./NoteForm.module.css";
+import { useNoteStore } from "@/lib/store/noteStore";
  
 export default function NoteForm() {
   const router = useRouter();
@@ -33,15 +33,10 @@ export default function NoteForm() {
     setDraft({ [name]: value });
   };
  
-  const handleCancel = () => {
-    router.back();
-  };
- 
   const handleSubmit = async (formData: FormData) => {
     const title = formData.get("title") as string;
     const content = formData.get("content") as string;
-    const tag = formData.get("tag") as CreateNoteData["tag"];
- 
+    const tag = formData.get("tag") as NoteTag;
     mutation.mutate({ title, content, tag });
   };
  
@@ -93,7 +88,7 @@ export default function NoteForm() {
         <button
           type="button"
           className={css.cancelButton}
-          onClick={handleCancel}
+          onClick={() => router.back()}
         >
           Cancel
         </button>
