@@ -20,9 +20,10 @@ async function getCookieHeader() {
   return { Cookie: cookieStore.toString() };
 }
  
-export const getMe = async () => {
+export const getMe = async (): Promise<User> => {
   const headers = await getCookieHeader();
-  return api.get<User>("/users/me", { headers });
+  const { data } = await api.get<User>("/users/me", { headers });
+  return data;
 };
  
 export const checkSession = async () => {
@@ -40,7 +41,6 @@ export const fetchNoteById = async (id: string) => {
   return api.get<Note>(`/notes/${id}`, { headers });
 };
  
-// Alias used in @modal page.tsx — returns data directly for prefetchQuery
 export const fetchServerNoteById = async (id: string): Promise<Note> => {
   const headers = await getCookieHeader();
   const { data } = await api.get<Note>(`/notes/${id}`, { headers });

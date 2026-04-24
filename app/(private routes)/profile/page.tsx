@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 };
  
 export default async function ProfilePage() {
-  const { data: user } = await getMe();
+  const user = await getMe();
  
   return (
     <main className={css.mainContent}>

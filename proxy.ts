@@ -1,29 +1,65 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkSession } from "./lib/api/serverApi";
+import { parse } from "cookie";
+import type { AxiosResponse } from "axios";
  
-const PRIVATE_ROUTES = ["/profile", "/notes"];
-const AUTH_ROUTES = ["/sign-in", "/sign-up"];
- 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const accessToken = request.cookies.get("accessToken")?.value;
   const refreshToken = request.cookies.get("refreshToken")?.value;
-  const isAuthenticated = !!(accessToken || refreshToken);
  
-  const isPrivate = PRIVATE_ROUTES.some((r) => pathname.startsWith(r));
-  const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+  const isPrivate =
+    pathname.startsWith("/profile") || pathname.startsWith("/notes");
+  const isAuth = pathname === "/sign-in" || pathname === "/sign-up";
  
-  if (isPrivate && !isAuthenticated) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+  if (accessToken) {
+    if (isAuth) {
+      return NextResponse.redirect(new URL("/profile", request.url));
+    }
+    return NextResponse.next();
   }
  
-  if (isAuth && isAuthenticated) {
-    return NextResponse.redirect(new URL("/profile", request.url));
+  if (refreshToken) {
+    try {
+      const response: AxiosResponse = await checkSession();
+      const setCookie = response.headers["set-cookie"] as string[] | string | undefined;
+ 
+      const nextResponse = isAuth
+        ? NextResponse.redirect(new URL("/profile", request.url))
+        : NextResponse.next();
+ 
+      if (setCookie) {
+        const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+        for (const cookieStr of cookieArray) {
+          const parsed = parse(cookieStr);
+          const options = {
+            expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
+            path: parsed.Path ?? "/",
+            maxAge: parsed["Max-Age"] ? Number(parsed["Max-Age"]) : undefined,
+          };
+          if (parsed.accessToken)
+            nextResponse.cookies.set("accessToken", parsed.accessToken, options);
+          if (parsed.refreshToken)
+            nextResponse.cookies.set("refreshToken", parsed.refreshToken, options);
+        }
+      }
+ 
+      return nextResponse;
+    } catch {
+      if (isPrivate) {
+        return NextResponse.redirect(new URL("/sign-in", request.url));
+      }
+      return NextResponse.next();
+    }
+  }
+ 
+  if (isPrivate) {
+    return NextResponse.redirect(new URL("/sign-in", request.url));
   }
  
   return NextResponse.next();
 }
  
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/profile/:path*", "/notes/:path*", "/sign-in", "/sign-up"],
 };
- 
