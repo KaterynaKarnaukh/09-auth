@@ -14,7 +14,7 @@ export async function proxy(request: NextRequest) {
  
   if (accessToken) {
     if (isAuth) {
-      return NextResponse.redirect(new URL("/profile", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
       const setCookie = response.headers["set-cookie"] as string[] | string | undefined;
  
       const nextResponse = isAuth
-        ? NextResponse.redirect(new URL("/profile", request.url))
+        ? NextResponse.redirect(new URL("/", request.url))
         : NextResponse.next();
  
       if (setCookie) {
