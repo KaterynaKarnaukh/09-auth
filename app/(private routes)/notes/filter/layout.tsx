@@ -3,7 +3,7 @@ import css from "./FilterLayout.module.css";
  
 interface FilterLayoutProps {
   children: ReactNode;
-  sidebar: ReactNode;
+  sidebar?: ReactNode;
 }
  
 export default function FilterLayout({ children, sidebar }: FilterLayoutProps) {
